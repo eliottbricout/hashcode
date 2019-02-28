@@ -5,7 +5,7 @@ const { writeResult } = require('./writeResult');
 
 console.time("parseFile");
 const data = parseFile(`probleme/${process.argv[2] || 'test'}`);
-console.log(data[0]);
+console.log(data);
 console.timeEnd("parseFile");
 
 console.time("searchResult");
