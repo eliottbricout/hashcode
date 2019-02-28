@@ -19,8 +19,9 @@ const searchResult = (data) => {
     // 3. Créer des slides à partir de ce tableau, en faisant attention à ne pas reprendre plusieurs fois la même
     const slideShow = [];
     const usedPictures = [];
-    let pendingVertical;
+    const pendingVerticals = [];
     occurrencies.forEach((pictures) => {
+        let pendingVertical;
         pictures
             .filter((picture) => usedPictures.indexOf(picture.id) === -1)
             .forEach((picture) => {
@@ -29,6 +30,7 @@ const searchResult = (data) => {
                 } else {
                     if (pendingVertical) {
                         slideShow.push([pendingVertical.id, picture.id]);
+                        _.remove(pendingVerticals, [ pendingVertical, picture ]);
                         pendingVertical = null;
                     } else {
                         pendingVertical = picture;
@@ -36,12 +38,17 @@ const searchResult = (data) => {
                 }
                 usedPictures.push(picture.id);
             });
+        
+        if (pendingVertical) {
+            pendingVerticals.push(pendingVertical);
+        }
     });
 
-    return slideShow;
+    return [...slideShow, ..._.chunk(pendingVerticals, 2).map((arr) => arr.map((el) => el.id))];
 };
 
-// 303 595 🦄
+// 1er run : Dumb 303 595 🦄
+// 2nd run : Regrouper les tags : 364 076
 // const searchResult = (data) => {
 //     const partitioned = _.partition(data, 'vertical');
 //     return [ ...partitioned[1].map(el => [el.id]), ..._.chunk(partitioned[0], 2).map((arr) => arr.map((el) => el.id)) ];
