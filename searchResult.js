@@ -2,49 +2,56 @@
 
 const _ = require('lodash');
 
-// 1. Faire un tableau des tags avec les occurences
-const createTagOccurrenciesArray = (input) => {
-    return input.reduce((acc, curr) => {
-        curr.tags.forEach((tag) => { if (!acc[tag]) acc[tag] = []; acc[tag].push(curr)});
-        return acc;
-    }, {});
+// 1 - Prendre les verticaux et les horizontaux pour n'avoir que des slides
+const getSlides = (data) => {
+    const partitioned = _.partition(data, 'vertical');
+    return [ 
+        ...partitioned[1],
+        ..._.chunk(partitioned[0], 2)
+            .map(chunk => chunk.reduce((acc, curr) => ({ ...acc, id: acc.id ? `${acc.id} ${curr.id}` : curr.id, tags: _.union(acc.tags, curr.tags) }), { tags: [] }))
+    ];
+};
+
+const checkScore = (p1, p2) => {
+    return _.intersection(p1.tags, p2.tags).length;
+}
+
+
+const solves = (bestScore, picture, matchWith, result) => {
+    if (!matchWith || matchWith.length <= 0) {
+        return;
+    }
+
+    let score;
+    let best;
+    let max = bestScore;
+
+    for(let pic of matchWith){
+        score = checkScore(pic, picture) - bestScore;
+        if (score < 1) {
+            best = pic;
+            break;
+        }
+        if (score < max) {
+            best = pic;
+            max = score;
+        }
+    }
+
+    result.push(best)
+    solves(bestScore, best, matchWith.filter(e => e !== best), result);
 }
 
 const searchResult = (data) => {
-    let occurrencies = createTagOccurrenciesArray(data);
+    const slides = getSlides(data);
+    const result = []
+    Object.entries(_.groupBy(slides, 'tags.length'))
+        .forEach(([ occurrencies, partitionedSlides ]) => {
+            result.push(partitionedSlides[0]);
+            solves(occurrencies, partitionedSlides[0], partitionedSlides.slice(1), result)
+        });
 
-    // 2. Prendre le tableau dans l'ordre croissant d'occurrences
-    occurrencies = Object.values(occurrencies).sort((a, b) => a.length - b.length); 
-
-    // 3. Créer des slides à partir de ce tableau, en faisant attention à ne pas reprendre plusieurs fois la même
-    const slideShow = [];
-    const usedPictures = [];
-    const pendingVerticals = [];
-    occurrencies.forEach((pictures) => {
-        let pendingVertical;
-        pictures
-            .filter((picture) => usedPictures.indexOf(picture.id) === -1)
-            .forEach((picture) => {
-                if (!picture.vertical) {
-                    slideShow.push([picture.id]);
-                } else {
-                    if (pendingVertical) {
-                        slideShow.push([pendingVertical.id, picture.id]);
-                        _.remove(pendingVerticals, [ pendingVertical, picture ]);
-                        pendingVertical = null;
-                    } else {
-                        pendingVertical = picture;
-                    }
-                }
-                usedPictures.push(picture.id);
-            });
-        
-        if (pendingVertical) {
-            pendingVerticals.push(pendingVertical);
-        }
-    });
-
-    return [...slideShow, ..._.chunk(pendingVerticals, 2).map((arr) => arr.map((el) => el.id))];
+    return result.map(el => el.id);
 };
 
 // 1er run : Dumb 303 595 🦄
