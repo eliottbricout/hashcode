@@ -3,6 +3,14 @@ const { parseFile } = require('./parserFile');
 const { searchResult } = require('./searchResult');
 const { writeResult } = require('./writeResult');
 
+console.time("parseFile");
 const data = parseFile(`probleme/${process.argv[2] || 'test'}`);
+console.timeEnd("parseFile");
+
+console.time("searchResult");
 const result = searchResult(data);
-console.log(writeResult(result, `solution/${process.argv[2] || 'test'}`));
+console.timeEnd("searchResult");
+
+console.time("writeResult");
+writeResult(result, `solution/${process.argv[2] || 'test'}`);
+console.timeEnd("writeResult");
